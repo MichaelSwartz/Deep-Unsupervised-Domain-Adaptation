@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import torch
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, datasets
 import numpy as np
-import os
-from torch.utils.data.sampler import SubsetRandomSampler
-from PIL import Image
-from utils import get_mean_std_dataset
+from torch.utils.data import DataLoader
+from torchvision import transforms, datasets
+from config import DIRECTORIES
 
 
 """
@@ -18,30 +14,97 @@ Created on Saturday Feb 22 2020
 """
 
 
-def get_office_dataloader(name_dataset, batch_size, train=True):
+def get_mean_std_dataset(root_dir):
+    """
+    Function to compute mean and std of image dataset.
+    Move batch_size param according to memory resources.
+    retrieved from: https://forums.fast.ai/t/image-normalization-in-pytorch/7534/7
+    """
+
+    # data_domain = "amazon"
+    # path_dataset = "datasets/office/%s/images" % data_domain
+
+    transform = transforms.Compose(
+        [
+            transforms.Resize((224, 224)),  # original image size 300x300 pixels
+            transforms.ToTensor(),
+        ]
+    )
+
+    dataset = datasets.ImageFolder(root=root_dir, transform=transform)
+
+    # set large batch size to get good approximate of mean, std of full dataset
+    # batch_size: 4096, 2048
+    data_loader = DataLoader(dataset, batch_size=2048, shuffle=False, num_workers=0)
+
+    mean = []
+    std = []
+
+    for i, data in enumerate(data_loader, 0):
+        # shape is (batch_size, channels, height, width)
+        npy_image = data[0].numpy()
+
+        # compute mean, std per batch shape (3,) three channels
+        batch_mean = np.mean(npy_image, axis=(0, 2, 3))
+        batch_std = np.std(npy_image, axis=(0, 2, 3))
+
+        mean.append(batch_mean)
+        std.append(batch_std)
+
+    # shape (num_iterations, 3) -> (mean across 0th axis) -> shape (3,)
+    mean = np.array(mean).mean(axis=0)  # average over batch averages
+    std = np.array(std).mean(axis=0)  # average over batch stds
+
+    values = {"mean": mean, "std": std}
+
+    return values
+
+
+def get_office_dataloader(
+    sub_dataset: str, parent_dataset: str, batch_size: int, train: bool = True
+):
     """
     Creates dataloader for the datasets in office datasetself.
     Uses get_mean_std_dataset() to compute mean and std along the
     color channels for the datasets in office.
     """
+    try:
+        root_dir = DIRECTORIES[parent_dataset] % sub_dataset
+        print(f"Root dir: {root_dir}")
+    except KeyError:
+        raise Exception(f"{parent_dataset} not in config.py DIRECTORIES")
 
-    # root dir (local pc or colab)
-    root_dir = "../data/%s/images" % name_dataset
     # root_dir = "datasets/office/%s/images" % name_dataset
     # root_dir = "/content/drive/My Drive/office/%s/images" % name_dataset
 
-    __datasets__ = ["amazon", "dslr", "webcam"]
+    if parent_dataset == "office31":
+        __datasets__ = ["amazon", "dslr", "webcam"]
 
-    if name_dataset not in __datasets__:
-        raise ValueError("must introduce one of the three datasets in office")
+        if sub_dataset not in __datasets__:
+            raise ValueError("must introduce one of the three datasets in office")
 
-    # Ideally compute mean and std with get_mean_std_dataset.py
-    # https://github.com/DenisDsh/PyTorch-Deep-CORAL/blob/master/data_loader.py
-    mean_std = {
-        "amazon": {"mean": [0.7923, 0.7862, 0.7841], "std": [0.3149, 0.3174, 0.3193]},
-        "dslr": {"mean": [0.4708, 0.4486, 0.4063], "std": [0.2039, 0.1920, 0.1996]},
-        "webcam": {"mean": [0.6119, 0.6187, 0.6173], "std": [0.2506, 0.2555, 0.2577]},
-    }
+        # Ideally compute mean and std with get_mean_std_dataset.py
+        # https://github.com/DenisDsh/PyTorch-Deep-CORAL/blob/master/data_loader.py
+        mean_std = {
+            "amazon": {
+                "mean": [0.7923, 0.7862, 0.7841],
+                "std": [0.3149, 0.3174, 0.3193],
+            },
+            "dslr": {"mean": [0.4708, 0.4486, 0.4063], "std": [0.2039, 0.1920, 0.1996]},
+            "webcam": {
+                "mean": [0.6119, 0.6187, 0.6173],
+                "std": [0.2506, 0.2555, 0.2577],
+            },
+        }
+        mean = mean_std[sub_dataset]["mean"]
+        std = mean_std[sub_dataset]["std"]
+
+    else:
+        mean_std = get_mean_std_dataset(root_dir)
+        mean = mean_std["mean"]
+        std = mean_std["std"]
+
+        print(f"Mean std for {root_dir}: {mean_std}")
 
     # compose image transformations
     data_transforms = transforms.Compose(
@@ -51,9 +114,7 @@ def get_office_dataloader(name_dataset, batch_size, train=True):
             # transforms.RandomSizedCrop(224),
             # transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize(
-                mean=mean_std[name_dataset]["mean"], std=mean_std[name_dataset]["std"]
-            ),
+            transforms.Normalize(mean=mean, std=std),
         ]
     )
 

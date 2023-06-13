@@ -96,6 +96,13 @@ def main():
         help="argument to compute coral loss (default False)",
     )
 
+    parser.add_argument(
+        "--parent_dataset",
+        type=str,
+        help="Choose from available alternative datasets such as officehome. Default is office31.",
+        default="office31",
+    )
+
     args = parser.parse_args()
 
     # create dataloaders (Amazon --> source, Webcam --> target)
@@ -104,11 +111,15 @@ def main():
     print("target data:", args.name_target)
 
     source_loader = get_office_dataloader(
-        name_dataset=args.name_source, batch_size=args.batch_size_source
+        sub_dataset=args.name_source,
+        parent_dataset=args.parent_dataset,
+        batch_size=args.batch_size_source,
     )
 
     target_loader = get_office_dataloader(
-        name_dataset=args.name_target, batch_size=args.batch_size_target
+        sub_dataset=args.name_target,
+        parent_dataset=args.parent_dataset,
+        batch_size=args.batch_size_target,
     )
 
     # define DDCNet model
