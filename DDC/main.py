@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 from train import train
 from test import test
 from loss import DDC_loss
-from utils import load_pretrained_AlexNet, save_log, save_model, load_model
+from utils import load_pretrained_AlexNet, save_log, save_model, load_model, load_resnet
 from dataloader import get_office_dataloader
 from model import DDCNet, AlexNet
 
@@ -121,7 +121,10 @@ def main():
 
     # load pre-trained model or pre-trained AlexNet
     if args.load_model is not None:
-        load_model(model, args.load_model)  # contains path to model params
+        if args.load_model == "resnet":
+            load_resnet(model)
+        else:
+            load_model(model, args.load_model)  # contains path to model params
     else:
         load_pretrained_AlexNet(model.sharedNetwork, progress=True)
 

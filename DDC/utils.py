@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import os
 import torch
 from torchvision import transforms, datasets
+from torchvision.models import resnet50, ResNet50_Weights
 
 try:
     from torch.hub import load_state_dict_from_url
@@ -66,6 +67,12 @@ def load_model(model, path):
     """
     model.load_state_dict(torch.load(path))
     print("pre-trained model loaded from {}".format(path))
+
+
+def load_resnet(model):
+    print("loading pre-trained ResNet...")
+    model.sharedNetwork = resnet50(weights=ResNet50_Weights.DEFAULT)
+    print("loaded model correctly...")
 
 
 def show_image(dataset, domain, image_class, image_name):
