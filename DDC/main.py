@@ -8,6 +8,7 @@ import math
 from tqdm import tnrange
 import torch
 from torch.autograd import Variable
+
 warnings.filterwarnings("ignore")
 
 from train import train
@@ -24,6 +25,7 @@ learning_rate = 1e-3
 L2_DECAY = 5e-4
 MOMENTUM = 0.9
 
+
 def step_decay(epoch, learning_rate):
     """
     Schedule step decay of learning rate with epochs.
@@ -31,9 +33,12 @@ def step_decay(epoch, learning_rate):
     initial_learning_rate = learning_rate
     drop = 0.8
     epochs_drop = 10.0
-    learning_rate = initial_learning_rate * math.pow(drop, math.floor((1 + epoch) / epochs_drop))
+    learning_rate = initial_learning_rate * math.pow(
+        drop, math.floor((1 + epoch) / epochs_drop)
+    )
 
     return learning_rate
+
 
 def main():
     """
@@ -45,29 +50,51 @@ def main():
     """
     parser = argparse.ArgumentParser(description="domain adaptation w MMD")
 
-    parser.add_argument("--epochs", default=10, type=int,
-                        help="number of training epochs")
+    parser.add_argument(
+        "--epochs", default=10, type=int, help="number of training epochs"
+    )
 
-    parser.add_argument("--batch_size_source", default=128, type=int,
-                        help="batch size of source data")
+    parser.add_argument(
+        "--batch_size_source", default=128, type=int, help="batch size of source data"
+    )
 
-    parser.add_argument("--batch_size_target", default=56, type=int,
-                        help="batch size of target data")
+    parser.add_argument(
+        "--batch_size_target", default=56, type=int, help="batch size of target data"
+    )
 
-    parser.add_argument("--name_source", default="amazon", type=str,
-                        help="name of source dataset (default amazon)")
+    parser.add_argument(
+        "--name_source",
+        default="amazon",
+        type=str,
+        help="name of source dataset (default amazon)",
+    )
 
-    parser.add_argument("--name_target", default="webcam", type=str,
-                        help="name of source dataset (default webcam)")
+    parser.add_argument(
+        "--name_target",
+        default="webcam",
+        type=str,
+        help="name of source dataset (default webcam)",
+    )
 
-    parser.add_argument("--num_classes", default=31, type=int,
-                        help="no. classes in dataset (default 31)")
+    parser.add_argument(
+        "--num_classes",
+        default=31,
+        type=int,
+        help="no. classes in dataset (default 31)",
+    )
 
-    parser.add_argument("--load_model", default=None, type=None,
-                        help="load pretrained model (default None)")
+    parser.add_argument(
+        "--load_model",
+        default=None,
+        type=None,
+        help="load pretrained model (default None)",
+    )
 
-    parser.add_argument("--adapt_domain", action='store_true',
-                        help="argument to compute coral loss (default False)")
+    parser.add_argument(
+        "--adapt_domain",
+        action="store_true",
+        help="argument to compute coral loss (default False)",
+    )
 
     args = parser.parse_args()
 
@@ -76,11 +103,13 @@ def main():
     print("source data:", args.name_source)
     print("target data:", args.name_target)
 
-    source_loader = get_office_dataloader(name_dataset = args.name_source,
-                                          batch_size = args.batch_size_source)
+    source_loader = get_office_dataloader(
+        name_dataset=args.name_source, batch_size=args.batch_size_source
+    )
 
-    target_loader = get_office_dataloader(name_dataset = args.name_target,
-                                          batch_size = args.batch_size_target)
+    target_loader = get_office_dataloader(
+        name_dataset=args.name_target, batch_size=args.batch_size_target
+    )
 
     # define DDCNet model
     model = DDCNet(num_classes=args.num_classes)
@@ -92,7 +121,7 @@ def main():
 
     # load pre-trained model or pre-trained AlexNet
     if args.load_model is not None:
-        load_model(model, args.load_model) # contains path to model params
+        load_model(model, args.load_model)  # contains path to model params
     else:
         load_pretrained_AlexNet(model.sharedNetwork, progress=True)
 
@@ -108,35 +137,51 @@ def main():
     print("running training for {} epochs...".format(args.epochs))
 
     for epoch in tnrange(0, args.epochs):
-
         log_interval = 10
         LEARNING_RATE = step_decay(epoch, learning_rate)
         print("Current learning rate:", LEARNING_RATE)
 
-        optimizer = torch.optim.SGD([
-            {"params": model.sharedNetwork.parameters()},
-            {"params": model.bottleneck.parameters(),  "lr":LEARNING_RATE},
-            {"params": model.fc8.parameters(), "lr":LEARNING_RATE},
-        ], lr=LEARNING_RATE/10, momentum=MOMENTUM, weight_decay=L2_DECAY)
+        optimizer = torch.optim.SGD(
+            [
+                {"params": model.sharedNetwork.parameters()},
+                {"params": model.bottleneck.parameters(), "lr": LEARNING_RATE},
+                {"params": model.fc8.parameters(), "lr": LEARNING_RATE},
+            ],
+            lr=LEARNING_RATE / 10,
+            momentum=MOMENTUM,
+            weight_decay=L2_DECAY,
+        )
 
         # compute lambda value from paper (eq 6)
         if args.adapt_domain:
-            lambda_factor = (epoch+1)/args.epochs # adaptation (w/ coral loss)
+            lambda_factor = (epoch + 1) / args.epochs  # adaptation (w/ coral loss)
 
         else:
-            lambda_factor = 0 # no adaptation (w/o coral loss)
+            lambda_factor = 0  # no adaptation (w/o coral loss)
 
         # run batch trainig at each epoch (returns dictionary with epoch result)
-        result_train = train(model, source_loader, target_loader,
-                             optimizer, epoch+1, lambda_factor, CUDA)
+        result_train = train(
+            model,
+            source_loader,
+            target_loader,
+            optimizer,
+            epoch + 1,
+            lambda_factor,
+            CUDA,
+        )
 
         # print log values
-        print("[EPOCH] {}: Classification loss: {:.6f}, DDC loss: {:.6f}, Total_Loss: {:.6f}".format(
-                epoch+1,
-                sum(row['classification_loss'] / row['total_steps'] for row in result_train),
-                sum(row['ddc_loss'] / row['total_steps'] for row in result_train),
-                sum(row['total_loss'] / row['total_steps'] for row in result_train),
-            ))
+        print(
+            "[EPOCH] {}: Classification loss: {:.6f}, DDC loss: {:.6f}, Total_Loss: {:.6f}".format(
+                epoch + 1,
+                sum(
+                    row["classification_loss"] / row["total_steps"]
+                    for row in result_train
+                ),
+                sum(row["ddc_loss"] / row["total_steps"] for row in result_train),
+                sum(row["total_loss"] / row["total_steps"] for row in result_train),
+            )
+        )
 
         training_statistic.append(result_train)
 
@@ -146,37 +191,41 @@ def main():
         testing_s_statistic.append(test_source)
         testing_t_statistic.append(test_target)
 
-        print("[Test Source]: Epoch: {}, avg_loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)".format(
-                epoch+1,
-                test_source['average_loss'],
-                test_source['correct_class'],
-                test_source['total_elems'],
-                test_source['accuracy %'],
-            ))
+        print(
+            "[Test Source]: Epoch: {}, avg_loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)".format(
+                epoch + 1,
+                test_source["average_loss"],
+                test_source["correct_class"],
+                test_source["total_elems"],
+                test_source["accuracy %"],
+            )
+        )
 
-        print("[Test Target]: Epoch: {}, avg_loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)".format(
-                epoch+1,
-                test_target['average_loss'],
-                test_target['correct_class'],
-                test_target['total_elems'],
-                test_target['accuracy %'],
-        ))
+        print(
+            "[Test Target]: Epoch: {}, avg_loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)".format(
+                epoch + 1,
+                test_target["average_loss"],
+                test_target["correct_class"],
+                test_target["total_elems"],
+                test_target["accuracy %"],
+            )
+        )
 
     # save log results
     if args.adapt_domain:
         print("saving training with adaptation...")
-        save_log(training_statistic, 'adaptation_training_statistic.pkl')
-        save_log(testing_s_statistic, 'adaptation_testing_s_statistic.pkl')
-        save_log(testing_t_statistic, 'adaptation_testing_t_statistic.pkl')
-        save_model(model, 'adaptation_checkpoint.tar')
+        save_log(training_statistic, "adaptation_training_statistic.pkl")
+        save_log(testing_s_statistic, "adaptation_testing_s_statistic.pkl")
+        save_log(testing_t_statistic, "adaptation_testing_t_statistic.pkl")
+        save_model(model, "adaptation_checkpoint.tar")
 
     else:
         print("saving training without adaptation...")
-        save_log(training_statistic, 'no_adaptation_training_statistic.pkl')
-        save_log(testing_s_statistic, 'no_adaptation_testing_s_statistic.pkl')
-        save_log(testing_t_statistic, 'no_adaptation_testing_t_statistic.pkl')
-        save_model(model, 'no_adaptation_checkpoint.tar')
+        save_log(training_statistic, "no_adaptation_training_statistic.pkl")
+        save_log(testing_s_statistic, "no_adaptation_testing_s_statistic.pkl")
+        save_log(testing_t_statistic, "no_adaptation_testing_t_statistic.pkl")
+        save_model(model, "no_adaptation_checkpoint.tar")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

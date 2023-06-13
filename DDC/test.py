@@ -24,10 +24,12 @@ def test(model, data_loader, epoch, cuda):
 
         # note on volatile: https://stackoverflow.com/questions/49837638/what-is-volatile-variable-in-pytorch
         data, label = Variable(data, volatile=True), Variable(label)
-        output, _ = model(data, data) # just use one ouput of DeepCORAL
+        output, _ = model(data, data)  # just use one ouput of DeepCORAL
 
         # sum batch loss when computing classification
-        test_loss += torch.nn.functional.cross_entropy(output, label, size_average=False).item()
+        test_loss += torch.nn.functional.cross_entropy(
+            output, label, size_average=False
+        ).item()
         # test_loss += torch.nn.functional.cross_entropy(output, label, size_average=False).data[0]
 
         # get the index of the max log-probability
@@ -35,13 +37,13 @@ def test(model, data_loader, epoch, cuda):
         correct_class += pred.eq(label.data.view_as(pred)).cpu().sum()
 
     # compute test loss as correclty classified labels divided by total data size
-    test_loss = test_loss/len(data_loader.dataset)
+    test_loss = test_loss / len(data_loader.dataset)
 
     # return dictionary containing info of each epoch
     return {
-        "epoch": epoch+1,
+        "epoch": epoch + 1,
         "average_loss": test_loss,
         "correct_class": correct_class.item(),
         "total_elems": len(data_loader.dataset),
-        "accuracy %": (100.*correct_class/len(data_loader.dataset)).item()
+        "accuracy %": (100.0 * correct_class / len(data_loader.dataset)).item(),
     }

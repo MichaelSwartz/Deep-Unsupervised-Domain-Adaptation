@@ -7,15 +7,16 @@ from torch.autograd import Variable
 from loss import DDC_loss
 
 
-def train(model, source_loader, target_loader,
-          optimizer, epoch, lambda_factor, cuda=False):
+def train(
+    model, source_loader, target_loader, optimizer, epoch, lambda_factor, cuda=False
+):
     """
     This method fits the trains DDCNetwork one epoch at a time.
     """
 
     model.train()
 
-    results = [] # append loss values at each epoch
+    results = []  # append loss values at each epoch
 
     # first cast into an iterable list the data loaders
     # data_source: (batch_size, channels, height, width)
@@ -32,7 +33,7 @@ def train(model, source_loader, target_loader,
         # fetch data in batches
         # _, source_data -> torch.Size([128, 3, 224, 224]), labels -> torch.Size([128])
         _, (source_data, source_label) = source[batch_idx]
-        _, (target_data, _) = target[batch_idx] # unsupervised learning
+        _, (target_data, _) = target[batch_idx]  # unsupervised learning
 
         print("CUDA:", cuda)
         if cuda:
@@ -56,7 +57,7 @@ def train(model, source_loader, target_loader,
         ddc_loss = DDC_loss(output1, output2)
 
         # compute total loss (equation 6 paper)
-        total_loss = classification_loss + lambda_factor*ddc_loss
+        total_loss = classification_loss + lambda_factor * ddc_loss
 
         # compute gradients of network (backprop in pytorch)
         total_loss.backward()
@@ -65,26 +66,30 @@ def train(model, source_loader, target_loader,
         optimizer.step()
 
         # append results for each batch iteration as dictionaries
-        results.append({
-            'epoch': epoch,
-            'step': batch_idx + 1,
-            'total_steps': train_steps,
-            'lambda': lambda_factor,
-            'ddc_loss': ddc_loss.item(), # coral_loss.data[0],
-            'classification_loss': classification_loss.item(),  # classification_loss.data[0],
-            'total_loss': total_loss.item() # total_loss.data[0]
-        })
+        results.append(
+            {
+                "epoch": epoch,
+                "step": batch_idx + 1,
+                "total_steps": train_steps,
+                "lambda": lambda_factor,
+                "ddc_loss": ddc_loss.item(),  # coral_loss.data[0],
+                "classification_loss": classification_loss.item(),  # classification_loss.data[0],
+                "total_loss": total_loss.item(),  # total_loss.data[0]
+            }
+        )
 
         # print training info
-        print('Train Epoch: {:2d} [{:2d}/{:2d}]\t'
-              'Lambda value: {:.4f}, Classification loss: {:.6f}, ddc_loss: {:.6f}, Total_Loss: {:.6f}'.format(
-                  epoch,
-                  batch_idx + 1,
-                  train_steps,
-                  lambda_factor,
-                  classification_loss.item(), # classification_loss.data[0],
-                  ddc_loss.item(), # coral_loss.data[0],
-                  total_loss.item() # total_loss.data[0]
-              ))
+        print(
+            "Train Epoch: {:2d} [{:2d}/{:2d}]\t"
+            "Lambda value: {:.4f}, Classification loss: {:.6f}, ddc_loss: {:.6f}, Total_Loss: {:.6f}".format(
+                epoch,
+                batch_idx + 1,
+                train_steps,
+                lambda_factor,
+                classification_loss.item(),  # classification_loss.data[0],
+                ddc_loss.item(),  # coral_loss.data[0],
+                total_loss.item(),  # total_loss.data[0]
+            )
+        )
 
     return results
