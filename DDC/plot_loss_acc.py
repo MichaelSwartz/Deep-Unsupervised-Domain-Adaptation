@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import torch
-import matplotlib
+
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -18,10 +17,11 @@ Modified on Saturday Mar 21 2020
 """
 
 
-def plot_loss_acc(source, target, no_epochs):
+def plot_loss_acc(parent_dataset: str, source, target, no_epochs):
     # specify path where in log folder where training logs are saved
     pkldir = os.path.join(
         "logs",
+        parent_dataset,
         source + "_to_" + target,
         str(no_epochs) + "_epochs_128_s_128_t_batch_size",
     )
@@ -51,7 +51,7 @@ def plot_loss_acc(source, target, no_epochs):
     adapt_testing_source_dict = pickle.load(open(path_adapt_log[1], "rb"))
     adapt_testing_target_dict = pickle.load(open(path_adapt_log[2], "rb"))
 
-    no_adapt_training_dict = pickle.load(open(path_no_adapt_log[0], "rb"))
+    # no_adapt_training_dict = pickle.load(open(path_no_adapt_log[0], "rb"))
     no_adapt_testing_source_dict = pickle.load(open(path_no_adapt_log[1], "rb"))
     no_adapt_testing_target_dict = pickle.load(open(path_no_adapt_log[2], "rb"))
     print(">>>pkl files loaded correctly<<<")
@@ -176,9 +176,21 @@ def main():
 
     parser.add_argument("--no_epochs", default=100, type=int)
 
+    parser.add_argument(
+        "--parent_dataset",
+        type=str,
+        help="Choose from available alternative datasets such as officehome. Default is office31.",
+        default="office31",
+    )
+
     args = parser.parse_args()
 
-    plot_loss_acc(source=args.source, target=args.target, no_epochs=args.no_epochs)
+    plot_loss_acc(
+        parent_dataset=args.parent_dataset,
+        source=args.source,
+        target=args.target,
+        no_epochs=args.no_epochs,
+    )
 
 
 if __name__ == "__main__":

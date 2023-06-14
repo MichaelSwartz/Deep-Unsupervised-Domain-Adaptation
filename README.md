@@ -27,7 +27,7 @@ Once the model is trained, you can generate plots like the ones shown above by r
 
 ```
 cd DeepCORAL/
-python plot_loss_acc.py --source amazon --target webcam --no_epochs 10
+python plot_loss_acc.py --source amazon --target webcam --no_epochs 100
 ```
 
 The following is a list of the arguments the usuer can provide:
