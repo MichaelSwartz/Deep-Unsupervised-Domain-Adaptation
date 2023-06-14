@@ -1,0 +1,4 @@
+
+[EPOCH] 100: Classification loss: 0.963999, DDC loss: 0.671075, Total_Loss: 1.635074
+[Test Source]: Epoch: 100, avg_loss: 0.7464, Accuracy: 2243/2427 (92.42%)
+[Test Target]: Epoch: 100, avg_loss: 3.2872, Accuracy: 1209/4365 (27.70%)

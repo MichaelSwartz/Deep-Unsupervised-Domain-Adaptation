@@ -9,5 +9,4 @@ report/
 
 venv/
 *.tar
-*.pkl
 .vscode/settings.json

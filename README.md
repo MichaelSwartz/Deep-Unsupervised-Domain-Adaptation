@@ -1,7 +1,46 @@
-# Deep-Unsupervised-Domain-Adaptation
+# DDC-specifc Fork of Deep-Unsupervised-Domain-Adaptation
 
+This is a fork of [Deep-Unsupervised-Domain-Adaptation](https://github.com/agrija9/Deep-Unsupervised-Domain-Adaptation), which provided a more-up-to-date version of the code originally developed in (DDC-transfer-learning
+)[https://github.com/syorami/DDC-transfer-learning].
+
+- Paper for that repo: [Evaluation of Deep Neural Network Domain Adaptation Techniques for Image Recognition](https://arxiv.org/abs/2109.13420)
+- Paper for the original repo: [DDC](https://arxiv.org/abs/1412.3474)
+
+
+
+**Training and inference**
 ---
 
+To train the model in your computer you must download the [**Office31**](https://drive.google.com/file/d/0B4IapRTv9pJ1WGZVd1VDMmhwdlE/view) dataset and put it in your data folder. 
+
+Execute training of a method by going to its folder (e.g. DeepCORAL):
+
+```
+cd DeepCORAL/
+python main.py --epochs 100 --batch_size_source 128 --batch_size_target 128 --name_source amazon --name_target webcam
+```
+
+**Loss and accuracy plots**
+---
+
+Once the model is trained, you can generate plots like the ones shown above by running:
+
+```
+cd DeepCORAL/
+python plot_loss_acc.py --source amazon --target webcam --no_epochs 10
+```
+
+The following is a list of the arguments the usuer can provide:
+
+* ```--epochs``` number of training epochs
+* ```--source``` name of source dataset
+* ```--target``` name of source dataset
+
+
+
+_____
+## Original Readme
+---
 Pytorch implementation of four neural network based domain adaptation techniques: DeepCORAL, DDC, CDAN and CDAN+E. Evaluated on benchmark dataset Office31.
 
 Paper: [Evaluation of Deep Neural Network Domain Adaptation Techniques for Image Recognition](https://arxiv.org/abs/2109.13420)
