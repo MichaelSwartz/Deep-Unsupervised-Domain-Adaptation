@@ -17,7 +17,9 @@ Modified on Saturday Mar 21 2020
 """
 
 
-def plot_loss_acc(parent_dataset: str, source, target, no_epochs):
+def plot_loss_acc(
+    parent_dataset: str, source, target, no_epochs, include_no_adapt: bool
+):
     # specify path where in log folder where training logs are saved
     pkldir = os.path.join(
         "logs",
@@ -30,7 +32,7 @@ def plot_loss_acc(parent_dataset: str, source, target, no_epochs):
         print("directory with pkl files is:", pkldir)
 
     else:
-        print("folder with pkl data does not exist, must train model")
+        print(f"{pkldir} does not exist, must train model")
         return None
 
     # load dictionaries with log information
@@ -52,12 +54,15 @@ def plot_loss_acc(parent_dataset: str, source, target, no_epochs):
     adapt_testing_target_dict = pickle.load(open(path_adapt_log[2], "rb"))
 
     # no_adapt_training_dict = pickle.load(open(path_no_adapt_log[0], "rb"))
-    no_adapt_testing_source_dict = pickle.load(open(path_no_adapt_log[1], "rb"))
-    no_adapt_testing_target_dict = pickle.load(open(path_no_adapt_log[2], "rb"))
-    print(">>>pkl files loaded correctly<<<")
 
     print(np.shape(adapt_testing_source_dict))
-    print(np.shape(no_adapt_testing_source_dict))
+
+    if include_no_adapt:
+        no_adapt_testing_source_dict = pickle.load(open(path_no_adapt_log[1], "rb"))
+        no_adapt_testing_target_dict = pickle.load(open(path_no_adapt_log[2], "rb"))
+        print(np.shape(no_adapt_testing_source_dict))
+
+    print(">>>pkl files loaded correctly<<<")
 
     # create dictionary structures for adaptation and no-adaptation results
 
@@ -96,13 +101,14 @@ def plot_loss_acc(parent_dataset: str, source, target, no_epochs):
             adapt_testing_target_dict[epoch_idx]["accuracy %"]
         )
 
-        # store accuracies in no-adaptation dictionary
-        no_adaptation["source_accuracy"].append(
-            no_adapt_testing_source_dict[epoch_idx]["accuracy %"]
-        )
-        no_adaptation["target_accuracy"].append(
-            no_adapt_testing_target_dict[epoch_idx]["accuracy %"]
-        )
+        if include_no_adapt:
+            # store accuracies in no-adaptation dictionary
+            no_adaptation["source_accuracy"].append(
+                no_adapt_testing_source_dict[epoch_idx]["accuracy %"]
+            )
+            no_adaptation["target_accuracy"].append(
+                no_adapt_testing_target_dict[epoch_idx]["accuracy %"]
+            )
 
     # plot accuracies for test data in source and target domains
     fig = plt.figure(figsize=(8, 6), dpi=100)
@@ -118,24 +124,25 @@ def plot_loss_acc(parent_dataset: str, source, target, no_epochs):
         markersize=8,
     )
     plt.plot(
-        no_adaptation["target_accuracy"],
-        label="test acc. w/o ddc loss",
-        marker=".",
-        markersize=8,
-    )
-
-    plt.plot(
         adaptation["source_accuracy"],
         label="training acc. w/ ddc loss",
         marker="^",
         markersize=8,
     )
-    plt.plot(
-        no_adaptation["source_accuracy"],
-        label="training acc. w/o ddc loss",
-        marker="+",
-        markersize=8,
-    )
+
+    if include_no_adapt:
+        plt.plot(
+            no_adaptation["target_accuracy"],
+            label="test acc. w/o ddc loss",
+            marker=".",
+            markersize=8,
+        )
+        plt.plot(
+            no_adaptation["source_accuracy"],
+            label="training acc. w/o ddc loss",
+            marker="+",
+            markersize=8,
+        )
 
     plt.legend(loc="best")
     plt.grid()
@@ -176,6 +183,8 @@ def main():
 
     parser.add_argument("--no_epochs", default=100, type=int)
 
+    parser.add_argument("--include_no_adapt", action="store_true", help="TODO")
+
     parser.add_argument(
         "--parent_dataset",
         type=str,
@@ -190,6 +199,7 @@ def main():
         source=args.source,
         target=args.target,
         no_epochs=args.no_epochs,
+        include_no_adapt=args.include_no_adapt,
     )
 
 
