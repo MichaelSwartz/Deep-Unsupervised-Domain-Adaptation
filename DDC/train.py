@@ -35,7 +35,6 @@ def train(
         _, (source_data, source_label) = source[batch_idx]
         _, (target_data, _) = target[batch_idx]  # unsupervised learning
 
-        print("CUDA:", cuda)
         if cuda:
             # move to device
             source_data = source_data.cuda()

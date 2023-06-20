@@ -7,16 +7,14 @@ import warnings
 import math
 from tqdm import tnrange
 import torch
-from torch.autograd import Variable
 
 warnings.filterwarnings("ignore")
 
 from train import train
 from test import test
-from loss import DDC_loss
 from utils import load_pretrained_AlexNet, save_log, save_model, load_model, load_resnet
 from dataloader import get_office_dataloader
-from model import DDCNet, AlexNet
+from model import DDCNet
 
 
 # set model hyperparameters (paper page 5)
@@ -151,7 +149,6 @@ def main():
     print("running training for {} epochs...".format(args.epochs))
 
     for epoch in tnrange(0, args.epochs):
-        log_interval = 10
         LEARNING_RATE = step_decay(epoch, learning_rate)
         print("Current learning rate:", LEARNING_RATE)
 
@@ -166,12 +163,12 @@ def main():
             weight_decay=L2_DECAY,
         )
 
-        # compute lambda value from paper (eq 6)
+        # compute lambda value from paper to determine weighting of domain confusion loss
         if args.adapt_domain:
-            lambda_factor = (epoch + 1) / args.epochs  # adaptation (w/ coral loss)
+            lambda_factor = (epoch + 1) / args.epochs
 
         else:
-            lambda_factor = 0  # no adaptation (w/o coral loss)
+            lambda_factor = 0
 
         # run batch trainig at each epoch (returns dictionary with epoch result)
         result_train = train(
