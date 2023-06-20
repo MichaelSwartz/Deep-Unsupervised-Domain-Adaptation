@@ -87,13 +87,13 @@ def main():
         "--load_model",
         default=None,
         type=None,
-        help="load pretrained model (default None)",
+        help="Load pretrained model (default None)",
     )
 
     parser.add_argument(
         "--adapt_domain",
         action="store_true",
-        help="argument to compute coral loss (default False)",
+        help="Boolean to include domain confusion layer and loss (default False)",
     )
 
     parser.add_argument(
