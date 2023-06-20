@@ -127,6 +127,8 @@ def main():
     if CUDA:
         model = model.cuda()
         print("using cuda...")
+    else:
+        print("cuda not available")
 
     # load pre-trained model or pre-trained AlexNet
     if args.load_model is not None:
